@@ -1,1 +1,1 @@
-# next-auth-starter
+# Authentication Service

@@ -9,6 +9,7 @@ interface AuthButtonProps {
 }
 
 const AuthButton = ({ children, url }: AuthButtonProps) => {
+  // router to navigate to the url in client side component
   const router = useRouter();
 
   const onClick = () => {

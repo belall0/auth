@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { ReactNode } from 'react';
 import { FaGithub } from 'react-icons/fa6';
 import { FcGoogle } from 'react-icons/fc';
@@ -31,14 +30,17 @@ const FormWrapper = ({
 }: FormWrapperProps) => {
   return (
     <Card className="w-[320px] sm:w-[400px] md:w-[500px]">
-      <CardHeader>
-        <CardTitle>{formTitle}</CardTitle>
-        <CardDescription>{formDescription}</CardDescription>
+      <CardHeader className="space-y-2 p-6 text-center">
+        <CardTitle className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+          {formTitle}
+        </CardTitle>
+        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
+          {formDescription}
+        </CardDescription>
       </CardHeader>
 
-      <CardContent className="flex flex-col gap-y-10 border-4 border-red-500">
+      <CardContent className="flex flex-col gap-y-10">
         {children}
-
         {/* Social Buttons */}
         <div className="flex w-full items-center justify-center gap-x-2">
           <Button
@@ -48,7 +50,6 @@ const FormWrapper = ({
             onClick={() => {}}>
             <FcGoogle />
           </Button>
-
           <Button
             size={'lg'}
             className="w-full"
@@ -59,17 +60,17 @@ const FormWrapper = ({
         </div>
       </CardContent>
 
-      <CardFooter className="border-4 border-blue-500">
+      <CardFooter className="flex justify-center">
         {formType === 'login' ? (
           <AuthButton url="/auth/signup">
             <Button variant={'link'} className="text-black">
-              No account? Sign up!
+              Don't have an account? Sign up
             </Button>
           </AuthButton>
         ) : (
           <AuthButton url="/auth/login">
             <Button variant={'link'} className="text-black">
-              Already have an account? Login!
+              Already have an account? Login
             </Button>
           </AuthButton>
         )}
