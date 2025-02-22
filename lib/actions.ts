@@ -4,15 +4,18 @@ import { z } from 'zod';
 import { loginSchema, signupSchema } from '@/lib/schema';
 import db from './db';
 import bcrypt from 'bcryptjs';
+import { signIn } from '@/auth';
+import { DEFAULT_LOGIN_REDIRECT } from '@/routes';
+import { AuthError } from 'next-auth';
 
 type LoginValues = z.infer<typeof loginSchema>;
 type SignupValues = z.infer<typeof signupSchema>;
 
 const login = async (values: LoginValues) => {
-  const data = loginSchema.safeParse(values);
+  console.log("I'm inside the login server action");
+  const validatedFields = loginSchema.safeParse(values);
 
-  await new Promise((resolve) => setTimeout(resolve, 1500));
-  if (!data.success) {
+  if (!validatedFields.success) {
     return {
       success: false,
       error: {
@@ -21,12 +24,37 @@ const login = async (values: LoginValues) => {
     };
   }
 
-  return {
-    success: true,
-    data: {
-      message: 'Email sent!',
-    },
-  };
+  const { email, password } = validatedFields.data;
+  console.log('email:', email);
+  console.log('password:', password);
+  try {
+    await signIn('credentials', {
+      email,
+      password,
+      redirectTo: DEFAULT_LOGIN_REDIRECT, // redirect to the home page if the user is authenticated
+    });
+  } catch (e) {
+    // if the error is an instance of AuthError, then it's a custom error
+    if (e instanceof AuthError) {
+      if (e.type === 'CredentialsSignin') {
+        return {
+          success: false,
+          error: {
+            message: 'Invalid credentials',
+          },
+        };
+      }
+
+      return {
+        success: false,
+        error: {
+          message: 'something went wrong',
+        },
+      };
+    }
+
+    throw e;
+  }
 };
 
 const signupAction = async (values: SignupValues) => {
