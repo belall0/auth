@@ -1,9 +1,10 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useActionState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { login } from '@/lib/actions/auth';
 import { loginSchema, LoginFormData } from '@/lib/schemas/auth';
 
 import AuthFormWrapper from '@/components/auth/AuthFormWrapper';
@@ -36,6 +37,9 @@ const formFields: FormFieldConfig[] = [
 ];
 
 const LoginForm = () => {
+  // to get the response from the loginAction
+  const [data, action] = useActionState(login, undefined);
+  // to handle the pending state of the submission
   const [isPending, startTransition] = useTransition();
 
   const form = useForm<LoginFormData>({
@@ -47,8 +51,8 @@ const LoginForm = () => {
   });
 
   function onSubmit(values: LoginFormData) {
-    startTransition(async () => {
-      console.log(`Form submitted with values:`, values);
+    startTransition(() => {
+      action(values);
     });
   }
 
@@ -75,11 +79,6 @@ const LoginForm = () => {
   );
 
   const renderFormStatus = () => {
-    const data = {
-      success: true,
-      message: 'Invalid email or password.',
-    };
-
     if (!data || data.message === undefined) return null;
 
     return (

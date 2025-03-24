@@ -1,8 +1,11 @@
 'use server';
 import bcrypt from 'bcryptjs';
-import { SignupFormData, signupSchema } from '@/lib/schemas/auth';
+import { LoginFormData, loginSchema, SignupFormData, signupSchema } from '@/lib/schemas/auth';
 import db from '@/lib/db/prisma';
 import { getUserByEmail } from '../db/user';
+import { signIn } from '@/auth/auth';
+import { DEFAULT_LOGIN_REDIRECT } from '@/auth/routes';
+import { AuthError } from 'next-auth';
 
 export const signup = async (prevState: any, data: FormData | SignupFormData) => {
   // TODO: remove this line when deploying to production
@@ -58,5 +61,40 @@ export const signup = async (prevState: any, data: FormData | SignupFormData) =>
       success: false,
       message: 'An unexpected error occurred during signup, please try again',
     };
+  }
+};
+
+export const login = async (prevState: any, data: FormData | LoginFormData) => {
+  let validatedFields;
+  if (data instanceof FormData) {
+    validatedFields = loginSchema.safeParse({
+      email: data.get('email'),
+      password: data.get('password'),
+    });
+  } else {
+    validatedFields = loginSchema.safeParse(data);
+  }
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      message: 'Invalid fields. Please check your input.',
+    };
+  }
+
+  const { email, password } = validatedFields.data;
+  try {
+    await signIn('credentials', {
+      email,
+      password,
+      redirectTo: DEFAULT_LOGIN_REDIRECT,
+    });
+  } catch (error) {
+    if (error instanceof AuthError && error.type === 'CredentialsSignin') {
+      return {
+        success: false,
+        message: 'Invalid email or password',
+      };
+    }
   }
 };
