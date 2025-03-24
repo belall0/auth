@@ -90,11 +90,22 @@ export const login = async (prevState: any, data: FormData | LoginFormData) => {
       redirectTo: DEFAULT_LOGIN_REDIRECT,
     });
   } catch (error) {
-    if (error instanceof AuthError && error.type === 'CredentialsSignin') {
-      return {
-        success: false,
-        message: 'Invalid email or password',
-      };
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return {
+            success: false,
+            message: 'Invalid email or password',
+          };
+
+        default:
+          return {
+            success: false,
+            message: 'An unexpected error occurred during login, please try again',
+          };
+      }
     }
+
+    throw error;
   }
 };
