@@ -1,18 +1,26 @@
+import { ReactNode } from 'react';
 import type { Metadata } from 'next';
+import { ToastContainer } from 'react-toastify';
 
 import { inter } from '@/lib/fonts';
-import { cn } from '@/lib/utils';
 import './globals.css';
 
 export const metadata: Metadata = {
   title: 'Auth',
-  description: 'Implementing authentication in Next.js with Auth0',
+  description: 'Authentication starter template for Next.js',
 };
 
-const RootLayout = ({ children }: { children: React.ReactNode }) => {
+interface RoteLayoutProps {
+  children: ReactNode;
+}
+
+const RootLayout = ({ children }: RoteLayoutProps) => {
   return (
     <html lang="en">
-      <body className={cn(inter.className, 'antialiased')}>{children}</body>
+      <body className={`${inter.className} bg-slate-900 text-white antialiased`}>
+        {children}
+        <ToastContainer />
+      </body>
     </html>
   );
 };

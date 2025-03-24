@@ -1,33 +1,59 @@
 'use client';
 
-import FormWrapper from './FormWrapper';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useActionState, useEffect, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { signupSchema } from '@/lib/schema';
+import { zodResolver } from '@hookform/resolvers/zod';
 
+import { signup } from '@/lib/actions/auth';
+import { signupSchema, SignupFormData } from '@/lib/schemas/auth';
+
+import AuthFormWrapper from '@/components/auth/AuthFormWrapper';
+import FormStatus from '@/components/auth/FormStatus';
 import { Button } from '@/components/ui/button';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { signupAction } from '@/lib/actions';
-import { useState, useTransition } from 'react';
-import FormSuccess from '../FormSuccess';
-import FormError from '../FormError';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 
-const SignUpForm = () => {
+interface FormFieldConfig {
+  name: keyof SignupFormData;
+  label: string;
+  type: string;
+  placeholder: string;
+}
+
+const formFields: FormFieldConfig[] = [
+  {
+    name: 'name',
+    label: 'Name',
+    type: 'text',
+    placeholder: 'Belal Muhammad',
+  },
+  {
+    name: 'email',
+    label: 'Email',
+    type: 'email',
+    placeholder: 'belal@example.com',
+  },
+  {
+    name: 'password',
+    label: 'Password',
+    type: 'password',
+    placeholder: '********',
+  },
+  {
+    name: 'confirmPassword',
+    label: 'Confirm Password',
+    type: 'password',
+    placeholder: '********',
+  },
+];
+
+const SignupForm = () => {
+  // to get the response from the loginAction
+  const [data, action] = useActionState(signup, undefined);
+  // to handle the pending state of the submission
   const [isPending, startTransition] = useTransition();
-  const [error, setError] = useState<string | undefined>('');
-  const [success, setSuccess] = useState<string | undefined>('');
 
-  const form = useForm<z.infer<typeof signupSchema>>({
+  const form = useForm<SignupFormData>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: '',
@@ -37,125 +63,73 @@ const SignUpForm = () => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof signupSchema>) {
-    setSuccess('');
+  useEffect(() => {
+    if (data && data.success) {
+      form.reset();
+    }
+  }, [data]);
 
-    startTransition(async () => {
-      const response = await signupAction(values);
-
-      if (response.success) {
-        setSuccess(response.data?.message);
-      } else {
-        setError(response.error?.message);
-      }
-
-      console.log(response);
+  function onSubmit(values: SignupFormData) {
+    startTransition(() => {
+      action(values);
     });
   }
 
+  const renderFormFields = ({ name, type, label, placeholder }: FormFieldConfig, key: string) => (
+    <FormField
+      key={key}
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel>{label}</FormLabel>
+          <FormControl>
+            <Input
+              placeholder={placeholder}
+              {...field}
+              type={type}
+              disabled={isPending}
+            />
+          </FormControl>
+          <FormMessage />
+        </FormItem>
+      )}
+    />
+  );
+
+  const renderFormStatus = () => {
+    if (!data || data.message === undefined) return null;
+    return (
+      <FormStatus
+        type={data.success ? 'success' : 'error'}
+        message={data.message}
+      />
+    );
+  };
+
   return (
-    <FormWrapper
-      formTitle="Sign Up"
-      formDescription="Please fill in the form to create an account."
+    <AuthFormWrapper
+      formTitle="Create Your Account"
+      formDescription="Sign up to get started. It’s quick and secure."
       formType="signup">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="space-y-8">
+          {formFields.map((field) => renderFormFields(field, field.name))}
+          {renderFormStatus()}
 
-                  <FormControl>
-                    <Input
-                      placeholder="Belal Muhammad"
-                      type="text"
-                      {...field}
-                      disabled={isPending}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="email"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Email</FormLabel>
-
-                  <FormControl>
-                    <Input
-                      placeholder="belal@example.com"
-                      type="email"
-                      {...field}
-                      disabled={isPending}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Password</FormLabel>
-
-                  <FormControl>
-                    <Input
-                      placeholder="******"
-                      type="password"
-                      {...field}
-                      disabled={isPending}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirm Password</FormLabel>
-
-                  <FormControl>
-                    <Input
-                      placeholder="******"
-                      type="password"
-                      {...field}
-                      disabled={isPending}
-                    />
-                  </FormControl>
-
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
-
-          <FormSuccess message={success} />
-          <FormError message={error} />
-
-          <Button type="submit" className="w-full" disabled={isPending}>
+          <Button
+            type="submit"
+            size={'lg'}
+            className="w-full cursor-pointer"
+            disabled={isPending}>
             Create an account
           </Button>
         </form>
       </Form>
-    </FormWrapper>
+    </AuthFormWrapper>
   );
 };
 
-export default SignUpForm;
+export default SignupForm;

@@ -1,11 +1,11 @@
 import { ReactNode } from 'react';
 
-const layout = ({ children }: { children: ReactNode }) => {
-  return (
-    <div className="bg-gradient flex h-full items-center justify-center">
-      {children}
-    </div>
-  );
+interface AuthLayoutProps {
+  children: ReactNode;
+}
+
+const AuthLayout = ({ children }: AuthLayoutProps) => {
+  return <div className="flex min-h-screen items-center justify-center">{children}</div>;
 };
 
-export default layout;
+export default AuthLayout;
