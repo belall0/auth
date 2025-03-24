@@ -7,7 +7,7 @@ export const publicRoutes = ['/'];
  * An array of routes that are used for authentication
  * These routes will redirect the logged in users to DEFAULT_LOGIN_REDIRECT
  */
-export const authRoutes = ['/auth/login', '/auth/signup'];
+export const authRoutes = ['/auth/login', '/auth/signup', '/auth/error'];
 
 /**
  * The prefix for the authentication routes

@@ -14,6 +14,28 @@ declare module 'next-auth' {
 }
 
 export const { auth, handlers, signIn, signOut } = NextAuth({
+  // SEARCH: Learn more about the pages
+  pages: {
+    signIn: '/auth/login',
+    error: '/auth/error',
+  },
+
+  // SEARCH: Learn more about the NextAuth Events and its use cases
+  events: {
+    // this function invokes when a user signs up with a third-party provider such as Google or GitHub
+    // We need to set emailVerified to the current date
+    async linkAccount({ user }) {
+      await db.user.update({
+        where: {
+          id: user.id,
+        },
+        data: {
+          emailVerified: new Date(),
+        },
+      });
+    },
+  },
+
   // SEARCH: Learn more about callbacks and the flow of invocation of each one
   callbacks: {
     async session({ token, session }) {

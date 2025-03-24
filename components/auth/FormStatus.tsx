@@ -24,7 +24,7 @@ const FormStatus = ({ message, type }: FormStatusProps) => {
 
   return (
     <div className={`flex items-center gap-x-2 rounded-md p-3 text-lg ${bgClass} ${textClass}`}>
-      {icon}
+      <span className="text-2xl">{icon}</span>
       <p>{message}</p>
     </div>
   );

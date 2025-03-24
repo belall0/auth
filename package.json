@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
+    "studio": "prisma studio",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

@@ -3,9 +3,9 @@
 import { useActionState, useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-
 import { login } from '@/lib/actions/auth';
 import { loginSchema, LoginFormData } from '@/lib/schemas/auth';
+import { useSearchParams } from 'next/navigation';
 
 import AuthFormWrapper from '@/components/auth/AuthFormWrapper';
 import FormStatus from '@/components/auth/FormStatus';
@@ -37,6 +37,11 @@ const formFields: FormFieldConfig[] = [
 ];
 
 const LoginForm = () => {
+  // Handle the case where the user is redirected to the login page with an error message from OAuth
+  const searchParams = useSearchParams();
+  const urlError =
+    searchParams.get('error') === 'OAuthAccountNotLinked' ? 'Email already in use with different provider' : null;
+
   // to get the response from the loginAction
   const [data, action] = useActionState(login, undefined);
   // to handle the pending state of the submission
@@ -79,14 +84,25 @@ const LoginForm = () => {
   );
 
   const renderFormStatus = () => {
-    if (!data || data.message === undefined) return null;
+    if (data === null && urlError === null) return null;
 
-    return (
-      <FormStatus
-        type={data.success ? 'success' : 'error'}
-        message={data.message}
-      />
-    );
+    if (data) {
+      return (
+        <FormStatus
+          type={data.success ? 'success' : 'error'}
+          message={data.message}
+        />
+      );
+    }
+
+    if (urlError) {
+      return (
+        <FormStatus
+          type="error"
+          message={urlError}
+        />
+      );
+    }
   };
 
   return (

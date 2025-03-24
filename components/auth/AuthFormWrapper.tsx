@@ -1,5 +1,9 @@
+'use client';
+
 import { ReactNode } from 'react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
+import { DEFAULT_LOGIN_REDIRECT } from '@/auth/routes';
 
 import { FcGoogle } from 'react-icons/fc';
 import { FaGithub } from 'react-icons/fa';
@@ -14,6 +18,12 @@ interface AuthFormWrapperProps {
 }
 
 const AuthFormWrapper = ({ children, formTitle, formDescription, formType }: AuthFormWrapperProps) => {
+  const onClick = (provider: 'google' | 'github') => {
+    signIn(provider, {
+      callbackUrl: DEFAULT_LOGIN_REDIRECT,
+    });
+  };
+
   return (
     <Card className="w-[320px] sm:w-[400px] md:w-[500px]">
       <CardHeader className="space-y-2 p-6 text-center">
@@ -52,15 +62,17 @@ const AuthFormWrapper = ({ children, formTitle, formDescription, formType }: Aut
 
         <div className="flex w-full items-center justify-center gap-x-2">
           <Button
+            onClick={() => onClick('google')}
             size={'lg'}
-            className="w-full"
+            className="w-full cursor-pointer"
             variant={'outline'}>
             <FcGoogle /> Google
           </Button>
 
           <Button
+            onClick={() => onClick('github')}
             size={'lg'}
-            className="w-full"
+            className="w-full cursor-pointer"
             variant={'outline'}>
             <FaGithub /> GitHub
           </Button>
