@@ -1,9 +1,8 @@
+import NextAuth, { type DefaultSession } from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-
 import authConfig from '@/auth/auth.config';
 import db from '@/lib/db/prisma';
 import { getUserById } from '@/lib/db/user';
-import NextAuth, { type DefaultSession } from 'next-auth';
 
 declare module 'next-auth' {
   interface Session {
@@ -22,9 +21,9 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
   // SEARCH: Learn more about the NextAuth Events and its use cases
   events: {
-    // this function invokes when a user signs up with a third-party provider such as Google or GitHub
-    // We need to set emailVerified to the current date
+    // called  when a user signs up with a third-party provider
     async linkAccount({ user }) {
+      // verify email automatically
       await db.user.update({
         where: {
           id: user.id,
@@ -38,14 +37,29 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
 
   // SEARCH: Learn more about callbacks and the flow of invocation of each one
   callbacks: {
-    async session({ token, session }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
+    async signIn({ user, account }) {
+      // Allow OAuth to sign in without email verification
+      if (account && (account.provider === 'google' || account.provider === 'github')) {
+        return true;
       }
 
-      if (token.role && session.user) {
-        session.user.role = token.role as string;
+      // Check if the user has verified their email
+      const existingUser = await db.user.findUnique({
+        where: {
+          id: user.id,
+        },
+      });
+
+      if (!existingUser || !existingUser.emailVerified) {
+        return false;
       }
+
+      return true;
+    },
+
+    async session({ token, session }) {
+      if (token.sub && session.user) session.user.id = token.sub;
+      if (token.role && session.user) session.user.role = token.role as string;
 
       return session;
     },
@@ -53,9 +67,7 @@ export const { auth, handlers, signIn, signOut } = NextAuth({
       if (!token.sub) return token;
 
       const existingUser = await getUserById(token.sub);
-      if (!existingUser) {
-        return token;
-      }
+      if (!existingUser) return token;
 
       token.role = existingUser.role;
 

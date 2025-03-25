@@ -1,16 +1,16 @@
 'use server';
+
+import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { LoginFormData, loginSchema, SignupFormData, signupSchema } from '@/lib/schemas/auth';
 import db from '@/lib/db/prisma';
-import { getUserByEmail } from '../db/user';
+import { getUserByEmail } from '@/lib/db/user';
 import { signIn } from '@/auth/auth';
 import { DEFAULT_LOGIN_REDIRECT } from '@/auth/routes';
-import { AuthError } from 'next-auth';
+import { sendVerificationEmail } from '@/lib/mail';
+import { generateVerificationToken } from '@/lib/tokens';
 
 export const signup = async (prevState: any, data: FormData | SignupFormData) => {
-  // TODO: remove this line when deploying to production
-  await new Promise((resolve) => setTimeout(resolve, 1000));
-
   // validate the form data
   let validatedFields;
   if (data instanceof FormData) {
@@ -51,10 +51,13 @@ export const signup = async (prevState: any, data: FormData | SignupFormData) =>
       },
     });
 
-    // TODO: Send a verification email and redirect to the email verification page
+    // generate and send verification token
+    const verificationToken = await generateVerificationToken(email);
+    await sendVerificationEmail(verificationToken.email, verificationToken.token);
+
     return {
       success: true,
-      message: 'Account created successfully',
+      message: 'Account created successfully. Please check your email to verify your account.',
     };
   } catch (error) {
     return {
@@ -65,6 +68,7 @@ export const signup = async (prevState: any, data: FormData | SignupFormData) =>
 };
 
 export const login = async (prevState: any, data: FormData | LoginFormData) => {
+  // validate the form data
   let validatedFields;
   if (data instanceof FormData) {
     validatedFields = loginSchema.safeParse({
@@ -82,7 +86,38 @@ export const login = async (prevState: any, data: FormData | LoginFormData) => {
     };
   }
 
+  // check if the user already exists
   const { email, password } = validatedFields.data;
+  const existingUser = await getUserByEmail(email);
+
+  // check if the user login with credentials provider
+  if (!existingUser || !existingUser.email || !existingUser.password) {
+    return {
+      success: false,
+      message: 'Invalid email or password',
+    };
+  }
+
+  // check if the password is correct
+  const isPasswordCorrect = await bcrypt.compare(password, existingUser.password);
+  if (!isPasswordCorrect) {
+    return {
+      success: false,
+      message: 'Invalid email or password',
+    };
+  }
+
+  // check if the email is verified or not
+  if (!existingUser.emailVerified) {
+    const verificationToken = await generateVerificationToken(existingUser.email);
+    await sendVerificationEmail(verificationToken.email, verificationToken.token);
+
+    return {
+      success: true,
+      message: 'Email not verified. Please check your email to verify your account.',
+    };
+  }
+
   try {
     await signIn('credentials', {
       email,
@@ -101,7 +136,7 @@ export const login = async (prevState: any, data: FormData | LoginFormData) => {
         default:
           return {
             success: false,
-            message: 'An unexpected error occurred during login, please try again',
+            message: 'Something went wrong. Please try again later',
           };
       }
     }
